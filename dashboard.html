@@ -6,43 +6,81 @@
     <title>Панель управления</title>
 </head>
 <body>
-<!-- Заголовок страницы -->
 <h1>Список контактов</h1>
-<!-- Контейнер для списка пользователей -->
+<h2>Текущий пользователь: <span id="currentUserName"></span></h2>
+
 <div id="userList"></div>
 
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
 <script>
-    // Объявление и инициализация переменных для текущего пользователя
-    // и пользователя, с которым возможно будет установлен чат.
-    // В реальном приложении значения этих переменных должны устанавливаться
-    // в результате аутентификации и должны быть сохранены, например, в localStorage.
-    const currentUser = '2';  // ID текущего пользователя
-    const idUser = '5';  // ID пользователя для демонстрации (может быть использован в будущем)
+    // Конфигурация Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBXy8sypysl5UWeC48gAE4h0RmgG9VDi5w",
+        authDomain: "apphijay.firebaseapp.com",
+        databaseURL: "https://apphijay-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "apphijay",
+        storageBucket: "apphijay.appspot.com",
+        messagingSenderId: "769284171312",
+        appId: "1:769284171312:web:16a99c1b19eae3ba1ceff5",
+        measurementId: "G-8X9M9PR273"
+    };
 
-    // Запрос к серверу для получения списка всех пользователей
-    fetch('http://localhost:8000/users/')
-        .then(response => response.json())  // Парсинг ответа от сервера в формате JSON
-        .then(users => {
-            const userListContainer = document.getElementById('userList');
-            userListContainer.innerHTML = '';  // Очистка контейнера перед добавлением новых данных
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
 
-            users.forEach(user => {
-                if (user.id !== currentUser) {  // Исключаем текущего пользователя из списка
-                    const userDiv = document.createElement('div');
+    // Проверка состояния аутентификации и загрузка пользователей
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            loadCurrentUser(user);
+            loadUsers();
+        } else {
+            window.location.href = 'login.html'; // Перенаправление на страницу входа, если не аутентифицирован
+        }
+    });
+    //test@test.ru
+    //test12345
+    //taskAaa@mail.test
+    //task12345
+    // Функция для загрузки и отображения данных текущего пользователя
+    function loadCurrentUser(user) {
+        const db = firebase.firestore();
+        db.collection('users').doc(user.uid).get().then(doc => {
+            if (doc.exists) {
+                const userData = doc.data();
+                document.getElementById('currentUserName').textContent = `${userData.firstName} ${userData.lastName}`;
+            } else {
+                console.log('No user data found in Firestore');
+            }
+        }).catch(error => {
+            console.error('Error loading current user data:', error);
+        });
+    }
+
+    // Функция для загрузки и отображения пользователей
+    function loadUsers() {
+        const db = firebase.firestore();
+        db.collection('users').get().then(querySnapshot => {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            querySnapshot.forEach(doc => {
+                const userData = doc.data();
+                if (doc.id !== firebase.auth().currentUser.uid) { // Исключаем текущего пользователя
+                    const userItem = document.createElement('div');
                     const userLink = document.createElement('a');
-                    // Создание ссылки на чат с каждым пользователем
-                    // В примере путь статичен, но должен быть динамичным в зависимости от ID пользователя
-                    userLink.href = `chat.html`;  // Путь к странице чата
-                    userLink.textContent = user.email;  // Отображение email пользователя как текста ссылки
-                    userDiv.appendChild(userLink);  // Добавление ссылки в блок div
-                    userListContainer.appendChild(userDiv);  // Добавление блока div в контейнер списка пользователей
+                    userLink.href = `chat.html?user=${doc.id}`;
+                    userLink.textContent = `${userData.firstName} ${userData.lastName}`;
+                    userLink.style.cursor = 'pointer';
+                    userItem.appendChild(userLink);
+                    userList.appendChild(userItem);
                 }
             });
-        })
-        .catch(error => {
-            // Обработка возможных ошибок при запросе
-            console.error('Ошибка при получении списка пользователей:', error);
+        }).catch(error => {
+            console.error('Error loading users:', error);
         });
+    }
 </script>
+
 </body>
 </html>

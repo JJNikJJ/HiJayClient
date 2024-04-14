@@ -9,68 +9,68 @@
 <h2>Вход в систему</h2>
 <form id="loginForm">
     <label for="email">Email:</label><br>
-    <input type="email" id="email" name="username" required><br> <!-- Поле для ввода email -->
+    <input type="email" id="email" name="username" required><br>
     <label for="password">Пароль:</label><br>
-    <input type="password" id="password" name="password" required><br> <!-- Поле для ввода пароля -->
-    <button type="submit">Войти</button> <!-- Кнопка для отправки формы -->
+    <input type="password" id="password" name="password" required><br>
+    <button type="submit">Войти</button>
 </form>
 
-<!-- Подключение Firebase SDK -->
+<button onclick="googleSignIn()">Войти с Google</button>
+<button onclick="appleSignIn()">Войти с Apple</button>
+
 <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
 <script>
-    // Конфигурация Firebase
     const firebaseConfig = {
-        apiKey: "your-api-key",
-        authDomain: "your-project-authdomain",
-        databaseURL: "your-database-url",
-        projectId: "your-project-id",
-        storageBucket: "your-storage-bucket",
-        messagingSenderId: "your-sender-id",
-        appId: "your-app-id",
-        measurementId: "your-measurement-id"
+        apiKey: "AIzaSyBXy8sypysl5UWeC48gAE4h0RmgG9VDi5w",
+        authDomain: "apphijay.firebaseapp.com",
+        databaseURL: "https://apphijay-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "apphijay",
+        storageBucket: "apphijay.appspot.com",
+        messagingSenderId: "769284171312",
+        appId: "1:769284171312:web:16a99c1b19eae3ba1ceff5",
+        measurementId: "G-8X9M9PR273"
     };
-
-    // Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
 
-    // Слушатель события отправки формы
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Предотвращение стандартного поведения браузера
-        const email = document.getElementById('email').value; // Получение email из формы
-        const password = document.getElementById('password').value; // Получение пароля из формы
+    const auth = firebase.auth();
 
-        // Аутентификация пользователя через Firebase
-        firebase.auth().signInWithEmailAndPassword(email, password)
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        auth.signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                // Успешная аутентификация, получение ID токена
-                return userCredential.user.getIdToken();
-            })
-            .then((token) => {
-                // Отправка токена на сервер для дополнительной проверки
-                return fetch('http://localhost:8000/verify_token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Произошла ошибка при верификации токена');
-                }
-                return response.json(); // Обработка ответа сервера
-            })
-            .then(data => {
-                // Переадресация пользователя на страницу dashboard
-                window.location.href = '/dashboard.html';
+                console.log('Login success:', userCredential.user);
+                window.location.href = 'dashboard.html';
             })
             .catch((error) => {
-                console.error('Ошибка входа:', error);
-                alert('Ошибка входа: ' + error.message); // Вывод сообщения об ошибке
+                console.error('Login error:', error);
+                alert('Login error: ' + error.message);
             });
     });
+
+    function googleSignIn() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).then(function(result) {
+            console.log('Google login success');
+            window.location.href = 'dashboard.html';
+        }).catch(function(error) {
+            console.error('Google login error:', error);
+            alert('Google login error: ' + error.message);
+        });
+    }
+
+    function appleSignIn() {
+        const provider = new firebase.auth.OAuthProvider('apple.com');
+        auth.signInWithPopup(provider).then(function(result) {
+            console.log('Apple login success');
+            window.location.href = 'dashboard.html';
+        }).catch(function(error) {
+            console.error('Apple login error:', error);
+            alert('Apple login error: ' + error.message);
+        });
+    }
 </script>
 </body>
 </html>

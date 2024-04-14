@@ -6,30 +6,28 @@
     <title>Регистрация</title>
 </head>
 <body>
-<!-- Заголовок для страницы регистрации -->
 <h2>Регистрация пользователя</h2>
-
-<!-- Форма регистрации с указанием ID для обработки в JavaScript -->
 <form id="registerForm">
-    <!-- Поле ввода электронной почты -->
+    <label for="firstName">Имя:</label><br>
+    <input type="text" id="firstName" name="firstName" required><br>
+
+    <label for="lastName">Фамилия:</label><br>
+    <input type="text" id="lastName" name="lastName" required><br>
+
     <label for="email">Email:</label><br>
     <input type="email" id="email" name="email" required><br>
-
-    <!-- Поле ввода пароля -->
     <label for="password">Пароль:</label><br>
     <input type="password" id="password" name="password" required><br>
-
-    <!-- Кнопка отправки формы -->
     <button type="submit">Зарегистрироваться</button>
 </form>
 
-<!-- Подключение Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
-<!-- Подключение модуля Firebase Authentication -->
-<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+<button onclick="googleSignIn()">Войти с Google</button>
+<button onclick="appleSignIn()">Войти с Apple</button>
 
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
 <script>
-    // Инициализация конфигурации Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBXy8sypysl5UWeC48gAE4h0RmgG9VDi5w",
         authDomain: "apphijay.firebaseapp.com",
@@ -41,39 +39,91 @@
         measurementId: "G-8X9M9PR273"
     };
 
-    // Процесс инициализации Firebase с заданными настройками
     firebase.initializeApp(firebaseConfig);
 
-    // Обработчик события отправки формы
-    document.getElementById('registerForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Предотвращение стандартного поведения браузера при отправке формы
-        const email = document.getElementById('email').value; // Получение значения из поля ввода email
-        const password = document.getElementById('password').value; // Получение значения из поля ввода пароля
+    const auth = firebase.auth();
 
-        // Отправка запроса на регистрацию нового пользователя
-        fetch('http://localhost:8000/register/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json' // Указание типа контента в HTTP заголовке
-            },
-            body: JSON.stringify({email: email, password: password}) // Преобразование данных формы в строку JSON
-        })
-            .then(response => {
-                if (response.ok) {
-                    return response.json(); // Обработка JSON ответа, если запрос успешен
-                } else {
-                    throw new Error('Не удалось зарегистрироваться'); // Генерация ошибки, если запрос неуспешен
-                }
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Сохраняем дополнительные данные в Firestore
+                return firebase.firestore().collection('users').doc(userCredential.user.uid).set({
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email
+                });
             })
-            .then(data => {
-                console.log('Регистрация прошла успешно! UID: ' + data.uid); // Логирование UID нового пользователя
-                window.location.href = 'dashboard.html'; // Переадресация на страницу dashboard после успешной регистрации
+            .then(() => {
+                console.log('User profile created in Firestore');
+                window.location.href = 'dashboard.html'; // Перенаправление на панель управления
             })
-            .catch(error => {
-                console.error('Ошибка регистрации:', error); // Обработка и отображение ошибок
-                alert('Ошибка регистрации: ' + error.message);
+            .catch((error) => {
+                console.error('Registration error:', error);
+                alert('Registration error: ' + error.message);
             });
     });
+
+    function googleSignIn() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).then(function(result) {
+            const user = result.user;
+            const nameParts = user.displayName ? user.displayName.split(' ') : ['', ''];
+            const firstName = nameParts[0];
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+            // Сохраняем данные пользователя в Firestore
+            firebase.firestore().collection('users').doc(user.uid).set({
+                firstName: firstName,
+                lastName: lastName,
+                email: user.email
+            }).then(() => {
+                console.log('User information saved to Firestore');
+                window.location.href = 'dashboard.html';
+            }).catch(error => {
+                console.error('Error saving user data to Firestore:', error);
+            });
+        }).catch(function(error) {
+            console.error('Error during Google sign-in:', error);
+        });
+    }
+
+    function appleSignIn() {
+        const provider = new firebase.auth.OAuthProvider('apple.com');
+        provider.addScope('name');
+        provider.addScope('email');
+
+        firebase.auth().signInWithPopup(provider).then(function(result) {
+            const user = result.user;
+            let firstName = '', lastName = '';
+
+            // Apple может предоставлять имя и фамилию в result.additionalUserInfo, при первой регистрации
+            if (result.additionalUserInfo && result.additionalUserInfo.profile) {
+                firstName = result.additionalUserInfo.profile.firstName || '';
+                lastName = result.additionalUserInfo.profile.lastName || '';
+            }
+
+            // Сохраняем данные пользователя в Firestore
+            firebase.firestore().collection('users').doc(user.uid).set({
+                firstName: firstName,
+                lastName: lastName,
+                email: user.email
+            }).then(() => {
+                console.log('User information saved to Firestore');
+                window.location.href = 'dashboard.html';
+            }).catch(error => {
+                console.error('Error saving user data to Firestore:', error);
+            });
+        }).catch(function(error) {
+            console.error('Error during Apple sign-in:', error);
+        });
+    }
+
 </script>
 </body>
 </html>
