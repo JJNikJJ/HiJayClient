@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+</head>
+<body>
+<!-- Заголовок для страницы регистрации -->
+<h2>Регистрация пользователя</h2>
+
+<!-- Форма регистрации с указанием ID для обработки в JavaScript -->
+<form id="registerForm">
+    <!-- Поле ввода электронной почты -->
+    <label for="email">Email:</label><br>
+    <input type="email" id="email" name="email" required><br>
+
+    <!-- Поле ввода пароля -->
+    <label for="password">Пароль:</label><br>
+    <input type="password" id="password" name="password" required><br>
+
+    <!-- Кнопка отправки формы -->
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+<!-- Подключение Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+<!-- Подключение модуля Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+
+<script>
+    // Инициализация конфигурации Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBXy8sypysl5UWeC48gAE4h0RmgG9VDi5w",
+        authDomain: "apphijay.firebaseapp.com",
+        databaseURL: "https://apphijay-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "apphijay",
+        storageBucket: "apphijay.appspot.com",
+        messagingSenderId: "769284171312",
+        appId: "1:769284171312:web:16a99c1b19eae3ba1ceff5",
+        measurementId: "G-8X9M9PR273"
+    };
+
+    // Процесс инициализации Firebase с заданными настройками
+    firebase.initializeApp(firebaseConfig);
+
+    // Обработчик события отправки формы
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Предотвращение стандартного поведения браузера при отправке формы
+        const email = document.getElementById('email').value; // Получение значения из поля ввода email
+        const password = document.getElementById('password').value; // Получение значения из поля ввода пароля
+
+        // Отправка запроса на регистрацию нового пользователя
+        fetch('http://localhost:8000/register/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' // Указание типа контента в HTTP заголовке
+            },
+            body: JSON.stringify({email: email, password: password}) // Преобразование данных формы в строку JSON
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json(); // Обработка JSON ответа, если запрос успешен
+                } else {
+                    throw new Error('Не удалось зарегистрироваться'); // Генерация ошибки, если запрос неуспешен
+                }
+            })
+            .then(data => {
+                console.log('Регистрация прошла успешно! UID: ' + data.uid); // Логирование UID нового пользователя
+                window.location.href = 'dashboard.html'; // Переадресация на страницу dashboard после успешной регистрации
+            })
+            .catch(error => {
+                console.error('Ошибка регистрации:', error); // Обработка и отображение ошибок
+                alert('Ошибка регистрации: ' + error.message);
+            });
+    });
+</script>
+</body>
+</html>

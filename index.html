@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title> <!-- Заголовок вкладки в браузере -->
+</head>
+<body>
+<!-- Заголовок страницы -->
+<h1>Hi Jay App</h1>
+<!-- Кнопка для проверки соединения с сервером -->
+<button id="checkConnectionBtn">Check Server Connection</button>
+<br><br>
+<!-- Ссылки на страницы входа и регистрации -->
+<a href="login.html"><button id="login">login</button></a><br><br>
+<a href="registration.html"><button id="register">register</button></a><br><br>
+<!-- Параграф для вывода ответа сервера или ошибки -->
+<p id="serverResponse"></p>
+
+<script>
+    // JavaScript код
+    document.getElementById('checkConnectionBtn').addEventListener('click', function() {
+        fetch('http://localhost:8000/test') // Отправка запроса к локальному серверу на эндпоинт /test
+            .then(response => response.json()) // Обработка ответа от сервера, преобразование в JSON
+            .then(data => {
+                document.getElementById('serverResponse').textContent = data.message; // Вывод сообщения от сервера в параграф
+            })
+            // Обработка возможных ошибок в запросе
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('serverResponse').textContent = 'Failed to connect to the server.';
+            });
+    });
+</script>
+</body>
+</html>

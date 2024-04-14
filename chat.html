@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Двойной Чат между пользователями 2 и 5</title>
+    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXy8sypysl5UWeC48gAE4h0RmgG9VDi5w",
+            authDomain: "apphijay.firebaseapp.com",
+            databaseURL: "https://apphijay-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "apphijay",
+            storageBucket: "apphijay.appspot.com",
+            messagingSenderId: "769284171312",
+            appId: "1:769284171312:web:16a99c1b19eae3ba1ceff5",
+            measurementId: "G-8X9M9PR273"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+</head>
+<body>
+<!-- Заголовки и элементы интерфейса для обоих чатов -->
+<h1>Чат между пользователями 2 и 5</h1>
+<div id="messages1"></div>
+<input type="text" id="messageInput1" placeholder="User 2 пишет User 5">
+<button onclick="sendMessage('2', '5')">Отправить</button>
+
+<h1>Чат между пользователями 5 и 2</h1>
+<div id="messages2"></div>
+<input type="text" id="messageInput2" placeholder="User 5 пишет User 2">
+<button onclick="sendMessage('5', '2')">Отправить</button>
+
+<script>
+    // Общий ID чата для обеих сессий чата
+    const chatId = '2_5';
+    // Ссылка на узел чата в Firebase
+    const messagesRef = firebase.database().ref('chats/' + chatId);
+
+    // Подписка на обновления в базе данных чата
+    messagesRef.on('value', function(snapshot) {
+        const data = snapshot.val();
+        const messagesContainer1 = document.getElementById('messages1');
+        const messagesContainer2 = document.getElementById('messages2');
+        messagesContainer1.innerHTML = '';
+        messagesContainer2.innerHTML = '';
+        // Добавление сообщений в оба контейнера чата
+        for (let key in data) {
+            const msg = data[key];
+            const messageDiv1 = document.createElement('div');
+            const messageDiv2 = document.createElement('div');
+            messageDiv1.textContent = messageDiv2.textContent = `${msg.senderId}: ${msg.text}`;
+            messagesContainer1.appendChild(messageDiv1);
+            messagesContainer2.appendChild(messageDiv2);
+        }
+    });
+
+    // Функция для отправки сообщений
+    function sendMessage(sender, receiver) {
+        const messageInput = document.getElementById(`messageInput${sender === '2' ? '1' : '2'}`);
+        const text = messageInput.value;
+        messageInput.value = '';
+        // Добавление сообщения в базу данных Firebase
+        messagesRef.push({
+            senderId: sender,
+            text: text
+        });
+    }
+</script>
+</body>
+</html>
